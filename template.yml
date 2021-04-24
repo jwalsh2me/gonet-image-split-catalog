@@ -20,7 +20,7 @@ Parameters:
     Default: 'gonet-split-tiff'
 
 Resources:
-  imageSplitFunction:
+  imageSplitCatalogFunction:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 45
@@ -36,7 +36,7 @@ Resources:
 
       Layers:
         - arn:aws:lambda:us-east-2:770693421928:layer:Klayers-python38-numpy:16
-      CodeUri: imageSplit/
+      CodeUri: imageSplitCatalog/
       Events:
         FileUpload:
           Type: S3
