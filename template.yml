@@ -20,7 +20,15 @@ Parameters:
     Default: 'gonet-split-tiff'
 
 Resources:
-  imageSplitCatalogFunction:
+  metadataTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: 'image_name'
+        Type: String
+      TableName: 'gonet-image-metadata'
+
+  imageSplitFunction:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 45
@@ -36,7 +44,7 @@ Resources:
 
       Layers:
         - arn:aws:lambda:us-east-2:770693421928:layer:Klayers-python38-numpy:16
-      CodeUri: imageSplitCatalog/
+      CodeUri: imageSplit/
       Events:
         FileUpload:
           Type: S3
@@ -56,6 +64,8 @@ Resources:
             BucketName: !Ref JpgOutputBucketName
         - S3CrudPolicy:
             BucketName: !Ref TiffOutputBucketName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref metadataTable
 
   SourceBucket:
     Type: AWS::S3::Bucket
@@ -97,6 +107,9 @@ Outputs:
   TiffOutputBucketName:
     Value: !Ref TiffOutputBucketName
     Description: S3 destination Bucket for Split TIFF Images
+  metadataTableName:
+    Value: !Ref metadataTable
+    Description: DynamoDB Table Name
   FunctionArn:
     Value: !Ref imageSplitFunction
     Description: imageSplitFunction function Arn
