@@ -1,5 +1,5 @@
 boto3
-urllib3
+botocore
 pillow
 picamraw
 tifffile

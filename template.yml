@@ -41,6 +41,7 @@ Resources:
           source_bucket: !Ref ImageSourceBucketName
           tiff_bucket: !Ref TiffOutputBucketName
           jpeg_bucket: !Ref JpgOutputBucketName
+          ddb_table: !Ref metadataTable
 
       Layers:
         - arn:aws:lambda:us-east-2:770693421928:layer:Klayers-python38-numpy:16
