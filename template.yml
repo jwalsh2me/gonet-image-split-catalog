@@ -28,13 +28,13 @@ Resources:
         Type: String
       TableName: 'gonet-image-metadata'
 
-  imageSplitFunction:
+  imageSplitCatFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Timeout: 45
+      Timeout: 10
       Handler: app.lambda_handler
       Runtime: python3.8
-      MemorySize: 2048
+      MemorySize: 1024
       Environment:
         Variables:
           app_env: !Ref ENV
@@ -45,7 +45,7 @@ Resources:
 
       Layers:
         - arn:aws:lambda:us-east-2:770693421928:layer:Klayers-python38-numpy:16
-      CodeUri: imageSplit/
+      CodeUri: imageSplitCatalog/
       Events:
         FileUpload:
           Type: S3
@@ -112,5 +112,5 @@ Outputs:
     Value: !Ref metadataTable
     Description: DynamoDB Table Name
   FunctionArn:
-    Value: !Ref imageSplitFunction
-    Description: imageSplitFunction function Arn
+    Value: !Ref imageSplitCatFunction
+    Description: imageSplitCatFunction Arn

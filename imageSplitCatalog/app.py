@@ -122,8 +122,8 @@ def lambda_handler(event, context):
         if 'Software' not in labeled:
             print("No Software")
             labeled['Software'] = f'{source_camera} UNK_VER WB: UNK, UNK'
-        image_time = str(labeled["DateTimeOriginal"]).split(' ')[0].replace(':','-')
-        image_date =str(labeled["DateTimeOriginal"]).split(' ')[1]
+        image_date = str(labeled["DateTimeOriginal"]).split(' ')[0].replace(':','-')
+        image_time =str(labeled["DateTimeOriginal"]).split(' ')[1]
         labeled['image_time'] = image_time
         labeled['image_date'] = image_date
         geotags = get_geotagging(exif)
@@ -133,9 +133,7 @@ def lambda_handler(event, context):
     gonet_software_version = str(labeled["Software"]).split(' ')[1]
     gonet_white_balance = str(labeled["Software"]).split(
         ' ')[3] + str(labeled["Software"]).split(' ')[4]
-    source_location = 's3_uri_source'
-    tiff_location = 's3_uri_tiff'
-    jpeg_location = 's3_uri_jpeg'
+
     print(f"Geotags:: {geotags}")
 
     try:
@@ -144,9 +142,9 @@ def lambda_handler(event, context):
         ddb_dict['gonet_camera_name'] = gonet_camera_name
         ddb_dict['gonet_software_version'] = gonet_software_version
         ddb_dict['gonet_white_balance'] = gonet_white_balance
-        ddb_dict['source_location'] = source_location
-        ddb_dict['tiff_location'] = tiff_location
-        ddb_dict['jpeg_location'] = jpeg_location
+        ddb_dict['source_location'] = source_uri
+        ddb_dict['tiff_location'] = tiff_uri
+        ddb_dict['jpeg_location'] = jpeg_uri
         for key, val in labeled.items():
             if key not in ('Software', 'ComponentsConfiguration', 'ExifVersion', 'WhiteBalance', 'MakerNote'):
                 # print(f"{key} :: {val}")
@@ -157,4 +155,9 @@ def lambda_handler(event, context):
     except botocore.exceptions.ClientError as e:
         print(f"ERROR! - {e}")
     # print(f"Added Item to DynamoDB Table - {Envs.ddb_table} :: {ddb_dict}")
+    ## cleanup /tmp
+    print("Cleaning up /tmp")
+    os.remove(source_image_tmp)
+    os.remove(f"/tmp/{tiff_filename}")
+    os.remove(f"/tmp/{jpeg_filename}")
     print('## DONE')
