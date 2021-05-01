@@ -1,3 +1,3 @@
 .vscode
-samconfig.toml
+# samconfig.toml
 .aws-sam

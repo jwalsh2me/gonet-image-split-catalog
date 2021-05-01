@@ -2,6 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: GONet - Image Pre-Processing, reads source image and splits into a JPG and TIFF Image
 
+#! Update KLayers with a VAR for REGION
 Parameters:
   ENV:
     Type: String
@@ -11,13 +12,13 @@ Parameters:
       - dev
   ImageSourceBucketName:
     Type: String
-    Default: 'gonet-image-source'
+    Default: 'gonet'
   JpgOutputBucketName:
     Type: String
-    Default: 'gonet-split-jpeg'
+    Default: 'gonet.split.jpeg'
   TiffOutputBucketName:
     Type: String
-    Default: 'gonet-split-tiff'
+    Default: 'gonet.split.tiff'
 
 Resources:
   metadataTable:
@@ -44,19 +45,19 @@ Resources:
           ddb_table: !Ref metadataTable
 
       Layers:
-        - arn:aws:lambda:us-east-2:770693421928:layer:Klayers-python38-numpy:16
+        - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-numpy:16
       CodeUri: imageSplitCatalog/
-      Events:
-        FileUpload:
-          Type: S3
-          Properties:
-            Bucket: !Ref SourceBucket
-            Events: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: '.jpg'
+      # Events:
+      #   FileUpload:
+      #     Type: S3
+      #     Properties:
+      #       Bucket: !Ref SourceBucket
+      #       Events: s3:ObjectCreated:*
+      #       Filter:
+      #         S3Key:
+      #           Rules:
+      #             - Name: suffix
+                    # Value: '.jpg'
       Policies:
         - AWSLambdaExecute
         - S3ReadPolicy:
@@ -68,16 +69,16 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref metadataTable
 
-  SourceBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      AccessControl: Private
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls       : true
-        BlockPublicPolicy     : true
-        IgnorePublicAcls      : true
-        RestrictPublicBuckets : true
-      BucketName: !Ref ImageSourceBucketName
+  # SourceBucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     AccessControl: Private
+  #     PublicAccessBlockConfiguration:
+  #       BlockPublicAcls       : true
+  #       BlockPublicPolicy     : true
+  #       IgnorePublicAcls      : truesam
+  #       RestrictPublicBuckets : true
+  #     BucketName: !Ref ImageSourceBucketName
   JpgOutputBucket:
     Type: AWS::S3::Bucket
     Properties:
