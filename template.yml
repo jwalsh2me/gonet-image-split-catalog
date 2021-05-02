@@ -31,7 +31,7 @@ Resources:
   imageSplitCatFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Timeout: 10
+      Timeout: 20
       Handler: app.lambda_handler
       Runtime: python3.8
       MemorySize: 1024

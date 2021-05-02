@@ -58,6 +58,30 @@ def get_geotagging(exif):
     return geotagging
 
 
+def get_decimal_from_dms(dms, ref):
+    # Convert DMS to decimal degrees
+
+    degrees = dms[0]
+    minutes = dms[1] / 60.0
+    seconds = dms[2] / 3600.0
+
+    if ref in ['S', 'W']:
+        degrees = -degrees
+        minutes = -minutes
+        seconds = -seconds
+
+    return round(degrees + minutes + seconds, 5)
+
+
+def get_coordinates(geotags):
+    lat = get_decimal_from_dms(
+        geotags['GPSLatitude'], geotags['GPSLatitudeRef'])
+    lon = get_decimal_from_dms(
+        geotags['GPSLongitude'], geotags['GPSLongitudeRef'])
+
+    return (lat, lon)
+
+
 def lambda_handler(event, context):
     print('## EVENT')
     print(event)
@@ -122,11 +146,19 @@ def lambda_handler(event, context):
         if 'Software' not in labeled:
             print("No Software")
             labeled['Software'] = f'{source_camera} UNK_VER WB: UNK, UNK'
-        image_date = str(labeled["DateTimeOriginal"]).split(' ')[0].replace(':','-')
-        image_time =str(labeled["DateTimeOriginal"]).split(' ')[1]
+        image_date = str(labeled["DateTimeOriginal"]).split(' ')[
+            0].replace(':', '-')
+        image_time = str(labeled["DateTimeOriginal"]).split(' ')[1]
         labeled['image_time'] = image_time
         labeled['image_date'] = image_date
         geotags = get_geotagging(exif)
+        geotags = get_geotagging(exif)
+        if geotags == 'UNK':
+            pass
+        else:
+            lat_lon = get_coordinates(geotags)
+            labeled['lat_lon'] = f"{lat_lon[0]}, {lat_lon[1]}"
+            labeled['altitude'] = (geotags['GPSAltitude'])
 
     # format GONet Custom EXIF
     gonet_camera_name = str(labeled["Software"]).split(' ')[0]
