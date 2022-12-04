@@ -1,3 +1,4 @@
 .vscode
 samconfig.toml
 .aws-sam
+john-samconfig.toml
