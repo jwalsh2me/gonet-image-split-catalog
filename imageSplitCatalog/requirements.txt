@@ -1,5 +1,6 @@
 boto3
 botocore
 pillow
-picamraw
+# picamraw #! only for GONet v1 and non HQ Webcams
 tifffile
+numpy
