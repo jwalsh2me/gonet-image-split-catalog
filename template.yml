@@ -26,7 +26,16 @@ Resources:
       PrimaryKey:
         Name: 'image_name'
         Type: String
-      TableName: 'gonet-image-metadata'
+      TableName: 'gonet-image-metadata-v2'
+  # MetadataTableV2:
+  #   Type: AWS::Serverless::SimpleTable
+  #   Properties:
+  #     PrimaryKey:
+  #       Name: 'image_name'
+  #       Type: String
+  #     TableName: 'gonet-image-metadata-v2'
+
+
 
   imageSplitCatFunction:
     Type: AWS::Serverless::Function
@@ -111,6 +120,9 @@ Outputs:
   MetadataTableName:
     Value: !Ref MetadataTable
     Description: DynamoDB Table Name
+  # MetadataTableV2Name:
+  #   Value: !Ref MetadataTableV2
+  #   Description: DynamoDB Table Name
   FunctionArn:
     Value: !Ref imageSplitCatFunction
     Description: imageSplitCatFunction Arn

@@ -81,7 +81,7 @@ def get_coordinates(geotags):
 
 
 def lambda_handler(event, context):
-    print('## EVENT')
+    print('## EVENT Received from S3 ##')
     print(event)
     s3_key = event["Records"][0]["s3"]["object"]["key"]
     s3_bucket = event["Records"][0]["s3"]["bucket"]["name"]
@@ -93,7 +93,7 @@ def lambda_handler(event, context):
     source_uri = (f"s3://{s3_bucket}/{s3_key}")
     tiff_uri = (f"s3://{Envs.tiff_bucket}/{source_camera}/{tiff_filename}")
     jpeg_uri = (f"s3://{Envs.jpeg_bucket}/{source_camera}/{jpeg_filename}")
-    print('## ENV')
+    print('## ENV SETTINGS ##')
     print(f"Source Bucket: {s3_bucket}")
     print(f"Source Key: {s3_key}")
     print(f"Image Name: {image_name}")
@@ -107,16 +107,14 @@ def lambda_handler(event, context):
 
     s3.download_file(s3_bucket, s3_key, source_image_tmp)
 
-    #TODO change out to new method
     # Split off the TIFF
-
     source_image = open(source_image_tmp, "rb")
     rawFileOffset = 18711040
     rawHeaderSize = 32768
     rawDataOffset = rawFileOffset - rawHeaderSize
     RELATIVETOEND = 2
 
-    source_image_tmp.seek(-rawDataOffset,RELATIVETOEND)
+    source_image.seek(-rawDataOffset,RELATIVETOEND)
     pixelsPerLine=4056
     pixelsPerColumn=3040
     usedLineBytes=int(pixelsPerLine*12/8)# source_image = picamraw.PiRawBayer(
@@ -124,7 +122,7 @@ def lambda_handler(event, context):
     # do this at least 3040 times though the precise number of lines is a bit unclear
     for i in range(pixelsPerColumn):
         # read in 6112 bytes, but only 6084 will be used
-        bdLine = file.read(6112)
+        bdLine = source_image.read(6112)
         gg=np.array(list(bdLine[0:usedLineBytes]),dtype='uint16')
         s[0::2,i] = (gg[0::3]<<4) + (gg[2::3]&15)
         s[1::2,i] = (gg[1::3]<<4) + (gg[2::3]>>4)
@@ -153,10 +151,6 @@ def lambda_handler(event, context):
                    (f"{source_camera}/{jpeg_filename}"))
     # Return Exif tags
     exif = get_exif(source_image_tmp)
-
-#TODO -- Working on logic handling of Artists tag and to skip 
-#* has_artist = float(gonet_software_version) > 20
-
     if not exif:
         labeled = {}
         labeled['Software'] = f'{source_camera} UNK_VER WB: UNK, UNK'
@@ -172,22 +166,30 @@ def lambda_handler(event, context):
         image_time = str(labeled["DateTimeOriginal"]).split(' ')[1]
         labeled['image_time'] = image_time
         labeled['image_date'] = image_date
-        geotags = get_geotagging(exif)
-        geotags = get_geotagging(exif)
-        if geotags == 'UNK':
-            pass
-        else:
-            lat_lon = get_coordinates(geotags)
-            labeled['lat_lon'] = f"{lat_lon[0]}, {lat_lon[1]}"
-            labeled['altitude'] = (geotags['GPSAltitude'])
+        gonet_software_version = str(labeled["Software"]).split(' ')[1]
+        print(gonet_software_version)
+        has_artist = float(gonet_software_version) >= 21
+        if has_artist:
+            print("Has Artist")
+            artist_lat = str(labeled["Artist"]).split(' ')[8]
+            artist_lon = str(labeled["Artist"]).split(' ')[10].rstrip(',')
+            labeled['lat_lon'] = f"{artist_lat} {artist_lon}"
+            labeled['altitude'] = str(labeled["Artist"]).split(' ')[12]
+        else: # We need to decode the GEOtags to get Alt and Lat-Lon
+            geotags = get_geotagging(exif)
+            if geotags == 'UNK':
+                pass
+            else:
+                lat_lon = get_coordinates(geotags)
+                labeled['lat_lon'] = f"{lat_lon[0]}, {lat_lon[1]}"
+                labeled['altitude'] = (geotags['GPSAltitude'])
 
-    # format GONet Custom EXIF
+    #* format GONet Custom EXIF
     gonet_camera_name = str(labeled["Software"]).split(' ')[0]
     gonet_software_version = str(labeled["Software"]).split(' ')[1]
     gonet_white_balance = str(labeled["Software"]).split(
         ' ')[3] + str(labeled["Software"]).split(' ')[4]
-
-    print(f"Geotags:: {geotags}")
+    has_artist = float(gonet_software_version) > 20
 
     try:
         ddb_dict = {}
@@ -207,8 +209,8 @@ def lambda_handler(event, context):
         print(f"Added Item to DynamoDB Table - {Envs.ddb_table} :: {ddb_dict}")
     except botocore.exceptions.ClientError as e:
         print(f"ERROR! - {e}")
-    # print(f"Added Item to DynamoDB Table - {Envs.ddb_table} :: {ddb_dict}")
-    ## cleanup /tmp
+    print(f"Added Item to DynamoDB Table - {Envs.ddb_table} :: {ddb_dict}")
+    #* cleanup /tmp
     print("Cleaning up /tmp")
     os.remove(source_image_tmp)
     os.remove(f"/tmp/{tiff_filename}")
