@@ -26,33 +26,33 @@ Resources:
       PrimaryKey:
         Name: 'image_name'
         Type: String
+      TableName: 'gonet-image-metadata'
+  MetadataTableV2:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: 'image_name'
+        Type: String
       TableName: 'gonet-image-metadata-v2'
-  # MetadataTableV2:
-  #   Type: AWS::Serverless::SimpleTable
-  #   Properties:
-  #     PrimaryKey:
-  #       Name: 'image_name'
-  #       Type: String
-  #     TableName: 'gonet-image-metadata-v2'
 
 
 
   imageSplitCatFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Timeout: 10
+      Timeout: 30
       Handler: appv2.lambda_handler
       Runtime: python3.9
       MemorySize: 2048
       EphemeralStorage:
-        Size: 2040
+        Size: 1024
       Environment:
         Variables:
           app_env: !Ref ENV
           source_bucket: !Ref ImageSourceBucketName
           tiff_bucket: !Ref TiffOutputBucketName
           jpeg_bucket: !Ref JpgOutputBucketName
-          ddb_table: !Ref MetadataTable
+          ddb_table: !Ref MetadataTableV2
 
       CodeUri: imageSplitCatalog/
       Events:
@@ -75,7 +75,7 @@ Resources:
         - S3CrudPolicy:
             BucketName: !Ref TiffOutputBucketName
         - DynamoDBCrudPolicy:
-            TableName: !Ref MetadataTable
+            TableName: !Ref MetadataTableV2
 
   SourceBucket:
     Type: AWS::S3::Bucket
@@ -120,9 +120,9 @@ Outputs:
   MetadataTableName:
     Value: !Ref MetadataTable
     Description: DynamoDB Table Name
-  # MetadataTableV2Name:
-  #   Value: !Ref MetadataTableV2
-  #   Description: DynamoDB Table Name
+  MetadataTableV2Name:
+    Value: !Ref MetadataTableV2
+    Description: DynamoDB Table Name
   FunctionArn:
     Value: !Ref imageSplitCatFunction
     Description: imageSplitCatFunction Arn
