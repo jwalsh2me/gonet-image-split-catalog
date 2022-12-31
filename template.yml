@@ -22,6 +22,8 @@ Parameters:
 Resources:
   MetadataTable:
     Type: AWS::Serverless::SimpleTable
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       PrimaryKey:
         Name: 'image_name'
@@ -29,6 +31,8 @@ Resources:
       TableName: 'gonet-image-metadata'
   MetadataTableV2:
     Type: AWS::Serverless::SimpleTable
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       PrimaryKey:
         Name: 'image_name'
