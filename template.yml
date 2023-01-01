@@ -45,7 +45,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 60
-      Handler: appv2.lambda_handler
+      Handler: app.lambda_handler
       Runtime: python3.9
       MemorySize: 2048
       EphemeralStorage:
