@@ -24,9 +24,9 @@ table = dynamodb.Table(Envs.ddb_table)
 
 
 def get_exif(filename):
-    image = Image.open(filename)
-    image.verify()
-    return image._getexif()
+    with Image.open(filename) as image:
+        image.verify()
+        return image._getexif()
 
 
 def get_labeled_exif(exif):
@@ -139,7 +139,7 @@ def lambda_handler(event, context):
     s3.upload_file((f"/tmp/{tiff_filename}"), Envs.tiff_bucket,
                    (f"{source_camera}/{tiff_filename}"))
     print('TIFF Uploaded')
-
+    source_image.close()
     # Split off the JPEG, save and apply EXIF from source to JPEG
     jpeg = Image.open(source_image_tmp).convert("RGB")
     exif = jpeg.info['exif']
@@ -167,8 +167,8 @@ def lambda_handler(event, context):
         labeled['image_time'] = image_time
         labeled['image_date'] = image_date
         gonet_software_version = str(labeled["Software"]).split(' ')[1]
-        print(gonet_software_version)
-        has_artist = float(gonet_software_version) >= 21 
+        print(f"GONet Software Version: {gonet_software_version}")
+        has_artist = float(gonet_software_version) >= 21
         #* V21 software added Artist Tag
         if has_artist:
             print("Has Artist EXIF Tag")

@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: |
+  GONet v2 Cameras - Image Pre-Processing, reads source image and splits into a JPEG and TIFF Image,
+  adds Metadata into DynamoDB
+
+#! Adler Deployment template, Buckets pre-exist so trigger and creation removed
+
+Parameters:
+  ENV:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - prod
+      - dev
+  ImageSourceBucketName:
+    Type: String
+    Default: 'gonet'
+  JpgOutputBucketName:
+    Type: String
+    Default: 'gonet.split.jpeg'
+  TiffOutputBucketName:
+    Type: String
+    Default: 'gonet.split.tiff'
+
+Resources:
+  MetadataTable:
+    Type: AWS::Serverless::SimpleTable
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PrimaryKey:
+        Name: "image_name"
+        Type: String
+      TableName: "gonet-image-metadata"
+  MetadataTableV2:
+    Type: AWS::Serverless::SimpleTable
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PrimaryKey:
+        Name: "image_name"
+        Type: String
+      TableName: "gonet-image-metadata-v2"
+
+  imageSplitCatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 60
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      MemorySize: 2048
+      EphemeralStorage:
+        Size: 1024
+      Environment:
+        Variables:
+          app_env: !Ref ENV
+          source_bucket: !Ref ImageSourceBucketName
+          tiff_bucket: !Ref TiffOutputBucketName
+          jpeg_bucket: !Ref JpgOutputBucketName
+          ddb_table: !Ref MetadataTableV2
+      CodeUri: imageSplitCatalog/
+      Policies:
+        - AWSLambdaExecute
+        - S3ReadPolicy:
+            BucketName: !Ref ImageSourceBucketName
+        - S3CrudPolicy:
+            BucketName: !Ref JpgOutputBucketName
+        - S3CrudPolicy:
+            BucketName: !Ref TiffOutputBucketName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MetadataTableV2
+
+  JpgOutputBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls       : true
+        BlockPublicPolicy     : true
+        IgnorePublicAcls      : true
+        RestrictPublicBuckets : true
+      BucketName: !Ref JpgOutputBucketName
+  TiffOutputBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls       : true
+        BlockPublicPolicy     : true
+        IgnorePublicAcls      : true
+        RestrictPublicBuckets : true
+      BucketName: !Ref TiffOutputBucketName
+Outputs:
+  ImageSourceBucketName:
+    Value: !Ref ImageSourceBucketName
+    Description: S3 Bucket for Uploaded GONet Images
+  JpgOutputBucketName:
+    Value: !Ref JpgOutputBucketName
+    Description: S3 destination Bucket for Split JPG Images
+  TiffOutputBucketName:
+    Value: !Ref TiffOutputBucketName
+    Description: S3 destination Bucket for Split TIFF Images
+  MetadataTableName:
+    Value: !Ref MetadataTable
+    Description: DynamoDB Table Name
+  MetadataTableV2Name:
+    Value: !Ref MetadataTableV2
+    Description: DynamoDB Table Name
+  FunctionArn:
+    Value: !Ref imageSplitCatFunction
+    Description: imageSplitCatFunction Arn
