@@ -4,6 +4,8 @@ Description: |
   GONet v2 Cameras - Image Pre-Processing, reads source image and splits into a JPEG and TIFF Image,
   adds Metadata into DynamoDB
 
+#! Adler Deployment template, Buckets pre-exist so trigger and creation removed
+
 Parameters:
   ENV:
     Type: String
@@ -13,16 +15,16 @@ Parameters:
       - dev
   ImageSourceBucketName:
     Type: String
-    Default: "gonet-image-source"
+    Default: 'gonet'
   JpgOutputBucketName:
     Type: String
-    Default: "gonet-split-jpeg"
+    Default: 'gonet.split.jpeg'
   TiffOutputBucketName:
     Type: String
-    Default: "gonet-split-tiff"
+    Default: 'gonet.split.tiff'
 
 Resources:
-  MetadataTable:
+  metadataTable:
     Type: AWS::Serverless::SimpleTable
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
@@ -57,19 +59,7 @@ Resources:
           tiff_bucket: !Ref TiffOutputBucketName
           jpeg_bucket: !Ref JpgOutputBucketName
           ddb_table: !Ref MetadataTableV2
-
       CodeUri: imageSplitCatalog/
-      Events:
-        FileUpload:
-          Type: S3
-          Properties:
-            Bucket: !Ref SourceBucket
-            Events: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: ".jpg"
       Policies:
         - AWSLambdaExecute
         - S3ReadPolicy:
@@ -81,35 +71,29 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref MetadataTableV2
 
-  SourceBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      AccessControl: Private
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      BucketName: !Ref ImageSourceBucketName
   JpgOutputBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AccessControl: Private
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+        BlockPublicAcls       : true
+        BlockPublicPolicy     : true
+        IgnorePublicAcls      : true
+        RestrictPublicBuckets : true
       BucketName: !Ref JpgOutputBucketName
   TiffOutputBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AccessControl: Private
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+        BlockPublicAcls       : true
+        BlockPublicPolicy     : true
+        IgnorePublicAcls      : true
+        RestrictPublicBuckets : true
       BucketName: !Ref TiffOutputBucketName
 Outputs:
   ImageSourceBucketName:
@@ -121,8 +105,8 @@ Outputs:
   TiffOutputBucketName:
     Value: !Ref TiffOutputBucketName
     Description: S3 destination Bucket for Split TIFF Images
-  MetadataTableName:
-    Value: !Ref MetadataTable
+  metadataTableName:
+    Value: !Ref metadataTable
     Description: DynamoDB Table Name
   MetadataTableV2Name:
     Value: !Ref MetadataTableV2

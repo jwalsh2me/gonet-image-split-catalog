@@ -2,3 +2,6 @@
 samconfig.toml
 .aws-sam
 john-samconfig.toml
+scratch
+scratch/GONetV21raw2tiffEXIF.py
+test-images
