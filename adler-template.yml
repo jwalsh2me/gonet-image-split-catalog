@@ -24,7 +24,7 @@ Parameters:
     Default: 'gonet.split.tiff'
 
 Resources:
-  MetadataTable:
+  metadataTable:
     Type: AWS::Serverless::SimpleTable
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
@@ -47,7 +47,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 60
-      Handler: app.lambda_handler
+      Handler: appV2.lambda_handler
       Runtime: python3.9
       MemorySize: 2048
       EphemeralStorage:
@@ -105,8 +105,8 @@ Outputs:
   TiffOutputBucketName:
     Value: !Ref TiffOutputBucketName
     Description: S3 destination Bucket for Split TIFF Images
-  MetadataTableName:
-    Value: !Ref MetadataTable
+  metadataTableName:
+    Value: !Ref metadataTable
     Description: DynamoDB Table Name
   MetadataTableV2Name:
     Value: !Ref MetadataTableV2
